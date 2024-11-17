@@ -338,23 +338,29 @@ void test_pagerank_pull_numa(XPGraph* xpgraph, int iteration_count){
     uint8_t NUM_SOCKETS = 2;
     tid_t ncores_per_socket = omp_get_max_threads() / NUM_SOCKETS / 2; //24
 
+    printf("ncores_per_socket = %d\n", ncores_per_socket);
+
+    omp_set_nested(1);
+
     // let's run the pagerank
     for (int iter_count = 0; iter_count < iteration_count; ++iter_count) {
+        // printf("iter_count = %d ==========================\n", iter_count);
         // double start1 = mywtime();
-        #pragma omp parallel 
+        #pragma omp parallel num_threads(2)
         {
-            tid_t tid = omp_get_thread_num();
-            for(int id = 0; id < NUM_SOCKETS; ++id){ // query from numa id
-                // if(tid >= 0 && tid < 24 || (tid >= 48 && tid < 72)){ // socket0
-                // if(tid >= 24 && tid < 48 || (tid >= 72 && tid < 96)){ // socket1
-                if((tid >= ncores_per_socket*id && tid < ncores_per_socket*(id+1)) 
-                || (tid >= ncores_per_socket*NUM_SOCKETS + ncores_per_socket*id && tid < ncores_per_socket*NUM_SOCKETS + ncores_per_socket*(id+1))){
-                    // bind_thread_to_socket(tid, id);
-                    xpgraph->bind_cpu(tid, id);
-                    
-                    // #pragma omp for schedule (static) nowait 
+            tid_t id = omp_get_thread_num();
+
+            #pragma omp parallel num_threads(40)
+            {
+                tid_t tid = omp_get_thread_num();
+                xpgraph->bind_cpu(tid, id);
+
                     #pragma omp for schedule (dynamic, 4096) nowait 
                     for (vid_t v = id; v < v_count; v+=NUM_SOCKETS) {
+                        // if(v < 16) {
+                        //     printf("v = %d\n", v);
+                        // }
+
                         sid_t uid;
                         degree_t nebr_count = 0;
                         degree_t local_degree = 0;
@@ -377,25 +383,26 @@ void test_pagerank_pull_numa(XPGraph* xpgraph, int iteration_count){
                         qthread_dincr(rank_array + v, rank);
                         delete [] local_adjlist;
                     }
-                } 
+
                 xpgraph->cancel_bind_cpu();
             }
 
-            if (iter_count != iteration_count - 1) {
-                #pragma omp for
-                for (vid_t v = 0; v < v_count; v++) {
-                    rank_array[v] = (0.15 + 0.85 * rank_array[v]) * dset[v];
-                    prior_rank_array[v] = 0;
-                } 
-            } else { 
-                #pragma omp for
-                for (vid_t v = 0; v < v_count; v++) {
-                    rank_array[v] = (0.15 + 0.85 * rank_array[v]);
-                    prior_rank_array[v] = 0;
-                }
-            }
-            
         }
+
+        if (iter_count != iteration_count - 1) {
+            #pragma omp parallel for
+            for (vid_t v = 0; v < v_count; v++) {
+                rank_array[v] = (0.15 + 0.85 * rank_array[v]) * dset[v];
+                prior_rank_array[v] = 0;
+            } 
+        } else { 
+            #pragma omp parallel for
+            for (vid_t v = 0; v < v_count; v++) {
+                rank_array[v] = (0.15 + 0.85 * rank_array[v]);
+                prior_rank_array[v] = 0;
+            }
+        }
+
 
         std::swap(prior_rank_array, rank_array);
         // double end1 = mywtime();

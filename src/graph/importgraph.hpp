@@ -156,7 +156,16 @@ void graph_ingestion(levelgraph_t *levelgraph, std::string idirname, std::string
     levelgraph->print_edgeshard();
 
     if(LEBUF_INPM && buf){ pmem_unmap(buf, total_size); buf = 0;}
-    else if(buf){ free(buf); buf = 0;}
+    else if(buf){
+        size_t s2m = 2 * 1024 * 1024;
+        int ret = munmap(buf, (total_size + s2m - 1) / s2m * s2m);  // round up to 2MB huge page
+        if(ret != 0) {
+            cout << std::strerror(errno) << endl;
+            cout << "munmap failed!" << endl;
+            free(buf);
+        }
+        buf = 0;
+    }
     prinf_timecost_breakdown(m, end - start);
     print_mempool_usage(levelgraph);
 }
