@@ -125,7 +125,7 @@ void print_mempool_usage(levelgraph_t *levelgraph){
 }
 
 #ifndef EXPOUT
-#define EXPOUT "[EXOPUT]"
+#define EXPOUT "[EXPOUT]"
 #endif
 
 void graph_ingestion(levelgraph_t *levelgraph, std::string idirname, std::string odirname, index_t count, metrics &m){

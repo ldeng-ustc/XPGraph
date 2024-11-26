@@ -101,11 +101,11 @@ bool XPGraph::del_edge(vid_t src, vid_t dst) {
 }
 
 void XPGraph::ingest_edges_from_files(std::string idirname, index_t count) {
-    m.start_time("2-ingest_edges_from_files");  
+    // m.start_time("2-ingest_edges_from_files");  
     std::string odirname = "";
     if(LEBUF_INPM && !DRAMONLY) odirname = NVMPATH0;
     graph_ingestion(levelgraph, idirname, odirname, count, m);
-    m.stop_time("2-ingest_edges_from_files");  
+    // m.stop_time("2-ingest_edges_from_files");  
 }
 
 void XPGraph::log_edges_from_files(std::string idirname, index_t count) {
@@ -134,6 +134,11 @@ void XPGraph::import_graph_by_config(){
             std::cout << "invalid job id " << std::endl;
             // print_usage();
     }
+}
+
+
+void XPGraph::import_graph() {
+    ingest_edges_from_files(filepath, nedges);
 }
 
 // index_t XPGraph::log_edges(char* buf, size_t size, index_t count) {

@@ -67,6 +67,7 @@ public:
     void log_edges_from_files(std::string idirname, index_t count = 0);
     void archive_edges_from_files(std::string idirname, int residue, index_t count = 0);
     void import_graph_by_config();
+    void import_graph();
     // index_t log_edges(char* buf, size_t size, index_t count = 0);
     // void archive_edges(int residue, index_t count);
     void archive_all_edges();
