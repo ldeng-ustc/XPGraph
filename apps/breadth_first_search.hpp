@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <cassert>
 #include <libxpgraph.h>
 
 inline void print_bfs_summary(uint16_t* status, uint16_t level, vid_t v_count, vid_t root){
@@ -137,8 +138,6 @@ index_t test_bfs_numa(XPGraph* xpgraph, index_t root=1){
 
     index_t root_count = 1;
     while(root_count--){
-        vid_t i1 = 0;
-
         int				level      = 1;
         int				top_down   = 1;
         vid_t			frontier   = 0;

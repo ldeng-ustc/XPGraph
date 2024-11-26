@@ -46,7 +46,7 @@ ScoreT* PageRankPullGS(XPGraph* xpgraph, int max_iters, double epsilon=0, bool l
 
     // m.stop_time("5.4.2  -get_degree_information");
 
-    uint8_t NUM_SOCKETS = 2;
+    constexpr uint8_t NUM_SOCKETS = 2;
     tid_t ncores_per_socket = omp_get_max_threads() / NUM_SOCKETS / 2;
     omp_set_nested(1);
     printf("ncores_per_socket = %d\n", ncores_per_socket);
@@ -55,23 +55,25 @@ ScoreT* PageRankPullGS(XPGraph* xpgraph, int max_iters, double epsilon=0, bool l
         auto st = std::chrono::high_resolution_clock::now();
         double error = 0;
 
-        #pragma omp parallel num_threads(2)
+        #pragma omp parallel num_threads(NUM_SOCKETS)
         {
             tid_t id = omp_get_thread_num();
-            #pragma omp parallel num_threads(40)
+            #pragma omp parallel num_threads(omp_get_max_threads()/NUM_SOCKETS)
             {
                 tid_t tid = omp_get_thread_num() + id * 40;
                 xpgraph->bind_cpu(tid, id);
 
-                #pragma omp parallel for reduction(+ : error) schedule(dynamic, 16384)
+                #pragma omp for reduction(+ : error) schedule(dynamic, 4096)
                 for (NodeID u=id; u < v_count; u+=NUM_SOCKETS) {
+                    if(u == 1) {
+                        printf("tid = %d, u = %d\n", tid, u);
+                    }
+
                     ScoreT incoming_total = 0;
 
                     degree_t nebr_count = 0;
                     degree_t local_degree = 0;
                     vid_t* local_adjlist;
-
-                    float rank = 0.0f; 
 
                     nebr_count = xpgraph->get_in_degree(u);
                     if (0 == nebr_count) continue;
@@ -90,6 +92,7 @@ ScoreT* PageRankPullGS(XPGraph* xpgraph, int max_iters, double epsilon=0, bool l
                     scores[u] = base_score + kDamp * incoming_total;
                     error += fabs(scores[u] - old_score);
                     outgoing_contrib[u] = scores[u] / xpgraph->get_out_degree(u);
+                    delete [] local_adjlist;
                 }
 
                 xpgraph->cancel_bind_cpu();
@@ -101,12 +104,11 @@ ScoreT* PageRankPullGS(XPGraph* xpgraph, int max_iters, double epsilon=0, bool l
 
         if (error < epsilon)
             break;
-        if (logging_enabled)
-            printf("PR Iteration %d (error=%.9f, time=%.2fs)\n", iter, error, dur);
+        printf("PR Iteration %d (error=%.9f, time=%.2fs)\n", iter, error, dur);
     
     }
 
-    free(outgoing_contrib);
+    delete [] outgoing_contrib;
     return scores;
 }
 
@@ -122,8 +124,8 @@ void PrintScores(ScoreT* scores, int64_t N) {
     }
 
     for (int64_t n=0; n < 5; n++)
-        printf("Score[%d] = %.9f\n", n, scores[n]);
-    printf("Score[%d] = %.9f (Max)\n", idx, max_score);
+        printf("Score[%ld] = %.9f\n", n, scores[n]);
+    printf("Score[%ld] = %.9f (Max)\n", idx, max_score);
 }
 
 ScoreT* pr_gapbs(XPGraph* xpgraph, int max_iters=10) {

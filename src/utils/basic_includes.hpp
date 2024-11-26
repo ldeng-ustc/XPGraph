@@ -165,14 +165,24 @@ inline void cancel_thread_bind(){
 
 inline void bind_thread_to_socket(tid_t tid, int socket_id){
     assert(NUM_SOCKETS == 2);
-    if(socket_id == 0){
-        if(tid >= 0 && tid < 24) bind_thread_to_cpu(tid);
-        else if(tid < 48) bind_thread_to_cpu(tid + 24);
-        // else cancel_thread_bind(); // only 48 cores available, other threads need to access PM across NUMA node
+    // if(socket_id == 0){
+    //     if(tid >= 0 && tid < 24) bind_thread_to_cpu(tid);
+    //     else if(tid < 48) bind_thread_to_cpu(tid + 24);
+    //     // else cancel_thread_bind(); // only 48 cores available, other threads need to access PM across NUMA node
+    // } else if(socket_id == 1){
+    //     if(tid >= 0 && tid < 24) bind_thread_to_cpu(tid + 72);
+    //     else if(tid < 48) bind_thread_to_cpu(tid);
+    //     else cancel_thread_bind(); // only 48 cores available, other threads need to access PM across NUMA node
+    // } else {
+    //     std::cout << "Wrong socket id: " << socket_id << std::endl;
+    //     assert(0);
+    // }
+    
+    // In our machine, 0~39 are on socket 0, 40~79 are on socket 1
+    if(socket_id == 0) {
+        bind_thread_to_cpu(tid);
     } else if(socket_id == 1){
-        if(tid >= 0 && tid < 24) bind_thread_to_cpu(tid + 72);
-        else if(tid < 48) bind_thread_to_cpu(tid);
-        else cancel_thread_bind(); // only 48 cores available, other threads need to access PM across NUMA node
+        bind_thread_to_cpu(tid);
     } else {
         std::cout << "Wrong socket id: " << socket_id << std::endl;
         assert(0);
