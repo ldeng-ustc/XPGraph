@@ -2,6 +2,7 @@
 #include <omp.h>
 #include <random>
 #include <algorithm>
+#include <chrono>
 #include <utility>
 #include <vector>
 #include <unordered_map>
@@ -82,6 +83,8 @@ vid_t SampleFrequentElement(vid_t* comp, vid_t v_count, index_t num_samples = 10
 }
 
 vid_t test_connected_components(XPGraph* xpgraph, index_t neighbor_rounds = 2) {
+    auto st= std::chrono::high_resolution_clock::now();
+    
     std::cout << "test_connected_components..." << std::endl;
     vid_t v_count = xpgraph->get_vcount();
     vid_t* comp = (vid_t*)calloc(sizeof(vid_t), v_count);
@@ -91,6 +94,10 @@ vid_t test_connected_components(XPGraph* xpgraph, index_t neighbor_rounds = 2) {
     for (vid_t v = 0; v < v_count; v++) {
         comp[v] = v;
     }
+
+    auto ts1 = std::chrono::high_resolution_clock::now();
+    auto dur = std::chrono::duration<double>(ts1 - st).count();
+    printf("Initialization time: %f\n", dur);
 
     // Process a sparse sampled subgraph first for approximating components.
     // Sample by processing a fixed number of neighbors for each node (see paper)
@@ -115,7 +122,12 @@ vid_t test_connected_components(XPGraph* xpgraph, index_t neighbor_rounds = 2) {
         }
     }
     Compress(v_count, comp);
-    
+
+
+    auto ts2 = std::chrono::high_resolution_clock::now();
+    dur = std::chrono::duration<double>(ts2 - ts1).count();
+    printf("Sampling time: %f\n", dur);
+ 
 
     vid_t c = SampleFrequentElement(comp, v_count);
 
@@ -151,22 +163,29 @@ vid_t test_connected_components(XPGraph* xpgraph, index_t neighbor_rounds = 2) {
     // Finally, 'compress' for final convergence
     Compress(v_count, comp);
 
-    std::unordered_map<vid_t, vid_t> count;
-    for (vid_t comp_i = 0; comp_i < v_count; comp_i++)
-        count[comp[comp_i]] += 1;
-    int k = 5;
-    std::vector<std::pair<vid_t, vid_t>> count_vector;
-    count_vector.reserve(count.size());
-    for (auto kvp : count) count_vector.push_back(kvp);
-    std::vector<std::pair<vid_t, vid_t>> top_k = TopK(count_vector, k);
-    k = std::min(k, static_cast<int>(top_k.size()));
-    std::cout << k << " biggest clusters" << std::endl;
-    for (auto kvp : top_k)
-        std::cout << kvp.second << ":" << kvp.first << std::endl;
-    std::cout << "There are " << count.size() << " components" << std::endl;
+    auto ts3 = std::chrono::high_resolution_clock::now();
+    dur = std::chrono::duration<double>(ts3 - ts2).count();
+    printf("Finalization time: %f\n", dur);
+
+    // std::unordered_map<vid_t, vid_t> count;
+    // for (vid_t comp_i = 0; comp_i < v_count; comp_i++)
+    //     count[comp[comp_i]] += 1;
+    // int k = 5;
+    // std::vector<std::pair<vid_t, vid_t>> count_vector;
+    // count_vector.reserve(count.size());
+    // for (auto kvp : count) count_vector.push_back(kvp);
+    // std::vector<std::pair<vid_t, vid_t>> top_k = TopK(count_vector, k);
+    // k = std::min(k, static_cast<int>(top_k.size()));
+    // std::cout << k << " biggest clusters" << std::endl;
+    // for (auto kvp : top_k)
+    //     std::cout << kvp.second << ":" << kvp.first << std::endl;
+    // std::cout << "There are " << count.size() << " components" << std::endl;
+
+    // free(comp);
+    // return count.size();
 
     free(comp);
-    return count.size();
+    return 0;
 }
 
 vid_t test_connected_components_numa(XPGraph* xpgraph, index_t neighbor_rounds = 2) {

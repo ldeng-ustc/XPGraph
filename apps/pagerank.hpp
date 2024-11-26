@@ -154,6 +154,8 @@ void test_pagerank_pull(XPGraph* xpgraph, int iteration_count) {
         // ofs << "Iteration Time = " << end1 - start1 << std::endl;
         // ofs.close();
     }
+
+    printf("PR[0] = %.8f\n", rank_array[0]);
     // double end = mywtime();
 
     // std::string statistic_filename = "xpgraph_query.csv";

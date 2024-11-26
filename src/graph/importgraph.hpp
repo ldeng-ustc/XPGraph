@@ -124,6 +124,10 @@ void print_mempool_usage(levelgraph_t *levelgraph){
     ofs.close();
 }
 
+#ifndef EXPOUT
+#define EXPOUT "[EXOPUT]"
+#endif
+
 void graph_ingestion(levelgraph_t *levelgraph, std::string idirname, std::string odirname, index_t count, metrics &m){
     //allocate accuately and read files
     char* buf = 0;
@@ -133,6 +137,7 @@ void graph_ingestion(levelgraph_t *levelgraph, std::string idirname, std::string
     double end = mywtime();
     std::cout << "  Read/alloc time = " << end - start << ", edge count = " << total_size/sizeof(edge_t) << endl;
     m.stop_time("2.1  -alloc_read");
+    std::cout << EXPOUT "Load: " << end - start << "s" << std::endl;
 
     start = mywtime ();
     // batch edges one by one
@@ -153,6 +158,7 @@ void graph_ingestion(levelgraph_t *levelgraph, std::string idirname, std::string
     m.stop_time("2.4  -compress_all_graph");
 #endif
     cout << "Ingest graph time = " << end - start << endl;
+    cout << EXPOUT "Ingest: " << end - start << "s" << std::endl;
     levelgraph->print_edgeshard();
 
     if(LEBUF_INPM && buf){ pmem_unmap(buf, total_size); buf = 0;}
