@@ -14,7 +14,7 @@
 int main(int argc, const char ** argv)
 {
     XPGraph *xpgraph = new XPGraph(argc, argv);
-    xpgraph->import_graph_by_config();
+    xpgraph->import_graph();
     
     test_graph_benchmarks_gapbs(xpgraph);
     delete xpgraph;
