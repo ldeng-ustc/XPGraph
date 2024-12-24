@@ -130,7 +130,7 @@ index_t test_bfs(XPGraph* xpgraph, index_t root_count){
 }
 
 index_t test_bfs_numa(XPGraph* xpgraph, index_t root=1){
-    std::cout << "test_bfs_numa..." << std::endl;
+    std::cout << "test_bfs_numa from" << root << std::endl;
     vid_t           v_count    = xpgraph->get_vcount();
 
     srand(0);
@@ -267,7 +267,8 @@ index_t test_bfs_numa(XPGraph* xpgraph, index_t root=1){
 
             auto ed = std::chrono::high_resolution_clock::now();
             double dur = std::chrono::duration<double>(ed - st).count();
-            std::cout << "Level = " << level << " Frontier Count = " << frontier << " Time = " << dur << " (Top Down = " << top_down << ")" << std::endl;
+            if(root == 1)
+                std::cout << "Level = " << level << " Frontier Count = " << frontier << " Time = " << dur << " (Top Down = " << top_down << ")" << std::endl;
             // double end = mywtime();
             // std::cout << "Top down = " << top_down
             //      << " Level = " << level
@@ -285,7 +286,7 @@ index_t test_bfs_numa(XPGraph* xpgraph, index_t root=1){
             total_count += frontier;
         } while (frontier);
 
-        print_bfs_summary(status, level, v_count, root);
+        // print_bfs_summary(status, level, v_count, root);
         delete [] status;
     }
     return total_count;

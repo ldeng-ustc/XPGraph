@@ -201,48 +201,51 @@ vid_t test_connected_components_numa(XPGraph* xpgraph, index_t neighbor_rounds =
 
     // Process a sparse sampled subgraph first for approximating components.
     // Sample by processing a fixed number of neighbors for each node (see paper)
-    for (index_t r = 0; r < neighbor_rounds; ++r) {
-        #pragma omp parallel 
-        {
-            tid_t tid = omp_get_thread_num();
-            // First process vertices in socket 0
-            xpgraph->bind_cpu(tid, 0);
-            #pragma omp for nowait
-            for (vid_t u = 0; u < v_count; u+=2) {
-                degree_t nebr_count, local_degree;
-                vid_t* local_adjlist;
-                nebr_count = xpgraph->get_out_degree(u);
-                if (nebr_count == 0) continue;
-                local_adjlist = new vid_t[nebr_count];
-                local_degree  = xpgraph->get_out_nebrs(u, local_adjlist);
-                assert(nebr_count == local_degree);
-                for (vid_t v = r; v < local_degree; v++) {
-                    Link(u, local_adjlist[v], comp);
-                    break;
+    // for (index_t r = 0; r < neighbor_rounds; ++r) {
+    // sample 2 edges in one round
+    size_t r = neighbor_rounds;
+    #pragma omp parallel 
+    {
+        tid_t tid = omp_get_thread_num();
+        // First process vertices in socket 0
+        xpgraph->bind_cpu(tid, 0);
+        #pragma omp for nowait
+        for (vid_t u = 0; u < v_count; u+=2) {
+            degree_t nebr_count, local_degree;
+            vid_t* local_adjlist;
+            nebr_count = xpgraph->get_out_degree(u);
+            if (nebr_count == 0) continue;
+            local_adjlist = new vid_t[nebr_count];
+            local_degree  = xpgraph->get_out_nebrs(u, local_adjlist);
+            assert(nebr_count == local_degree);
+            for (vid_t v = 0; v < r && v < local_degree; v++) {
+                if(u < 100) {
+                    std::cout << "u: " << u << " v: " << local_adjlist[v] << std::endl;
                 }
-                delete [] local_adjlist;
+                Link(u, local_adjlist[v], comp);
             }
-            // Then process vertices in socket 1
-            xpgraph->bind_cpu(tid, 1);
-            #pragma omp for nowait
-            for (vid_t u = 1; u < v_count; u+=2) {
-                degree_t nebr_count, local_degree;
-                vid_t* local_adjlist;
-                nebr_count = xpgraph->get_out_degree(u);
-                if (nebr_count == 0) continue;
-                local_adjlist = new vid_t[nebr_count];
-                local_degree  = xpgraph->get_out_nebrs(u, local_adjlist);
-                assert(nebr_count == local_degree);
-                for (vid_t v = r; v < local_degree; v++) {
-                    Link(u, local_adjlist[v], comp);
-                    break;
-                }
-                delete [] local_adjlist;
-            }
+            delete [] local_adjlist;
         }
-        Compress(v_count, comp);
-        xpgraph->cancel_bind_cpu();
+        // Then process vertices in socket 1
+        xpgraph->bind_cpu(tid, 1);
+        #pragma omp for nowait
+        for (vid_t u = 1; u < v_count; u+=2) {
+            degree_t nebr_count, local_degree;
+            vid_t* local_adjlist;
+            nebr_count = xpgraph->get_out_degree(u);
+            if (nebr_count == 0) continue;
+            local_adjlist = new vid_t[nebr_count];
+            local_degree  = xpgraph->get_out_nebrs(u, local_adjlist);
+            assert(nebr_count == local_degree);
+            for (vid_t v = 0; v < r && v < local_degree; v++) {
+                Link(u, local_adjlist[v], comp);
+            }
+            delete [] local_adjlist;
+        }
     }
+    Compress(v_count, comp);
+    xpgraph->cancel_bind_cpu();
+    // }
 
     vid_t c = SampleFrequentElement(comp, v_count);
 
@@ -326,7 +329,7 @@ vid_t test_connected_components_numa(XPGraph* xpgraph, index_t neighbor_rounds =
     //     std::cout << kvp.second << ":" << kvp.first << std::endl;
     // std::cout << "There are " << count.size() << " components" << std::endl;
 
-    // free(comp);
+    free(comp);
     // return count.size();
     return 0;
 }

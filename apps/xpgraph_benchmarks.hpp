@@ -28,8 +28,8 @@ inline double mywtime()
 
 void test_graph_benchmarks_gapbs(XPGraph* xpgraph){
     auto st = mywtime();
-    
-    test_bfs_numa(xpgraph, 1);
+    for(size_t i=0; i<20; i++)
+        test_bfs_numa(xpgraph, i);
     auto ts1 = mywtime();
 
     auto res = pr_gapbs(xpgraph, 10);
