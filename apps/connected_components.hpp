@@ -219,9 +219,6 @@ vid_t test_connected_components_numa(XPGraph* xpgraph, index_t neighbor_rounds =
             local_degree  = xpgraph->get_out_nebrs(u, local_adjlist);
             assert(nebr_count == local_degree);
             for (vid_t v = 0; v < r && v < local_degree; v++) {
-                if(u < 100) {
-                    std::cout << "u: " << u << " v: " << local_adjlist[v] << std::endl;
-                }
                 Link(u, local_adjlist[v], comp);
             }
             delete [] local_adjlist;
