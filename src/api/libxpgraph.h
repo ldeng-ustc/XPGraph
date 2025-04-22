@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <algorithm>
+#include <cstdint>
 
 /* ---------------------------------------------------------------------- */
 #ifdef B64
